@@ -1,6 +1,10 @@
 # Webpack Walk Through
 
-Larevle mix and vue webpack-simple are great ways to quick set up vue in your project. But at some point, you might wandering how these things work. And you have a lot of confuse. You want to know about to feel more confortable. This repos will show things behind the screen.
+Larevle mix and vue webpack-simple are great ways to quick set up vue in your project. But at some point, you might wander how these things work. And you have a lot of confuse. You want to know more to feel more confortable. This repos will show things behind the screen.
+
+## Table of Contents
+
+1. [Webpack Introduction](#wepack-introduction)
 
 ## Webpack Introduction
 
@@ -20,7 +24,7 @@ Server sends a bare-bones HTML doc to the user. Javasacript runs on the users ma
 
 Users Visit Page&#8594;HTTP request to server&#8594;New HTML Document&#8594;React/Angular/vue boots up&#8594;show page content.
 
-## JS in SST and SPA
+### JS in SST and SPA
 
 __Traditional server side templating (SST)__ may not need a lot of js code. But nowadays a real life proejct needs a lot of js code, especially for a  __single page application (SPA)__.
 
@@ -51,7 +55,7 @@ In that code, there may be declarations (variable declarations, function declara
 
 This approach to modules avoids global variables, the only things that are global are module specifiers.
 
-#### Linking between modules
+### Linking between modules
 
 In order to access the code in sum.js, we have to form a explicit link between index.js and sum.js.
 
@@ -62,26 +66,24 @@ There are two main rules (systems) that determine how javascript modules behave 
 | Common JS | module.exports  require |
 | ES2015 | export import|
 
-#### CommonJS
+### CommonJS
 
 Common JS is the module system implemented by Node.js. If we are only in a node environment, we can only use CommonJS (like the webpack.config.js we will discuss later)
 
-##### export
-
-* module.exports
+#### Default exports (one per module)
 
 Using **module.exports** to make a varible whether it represents a value/function or whatever available in othe modules of the site project
 
 ```javascript
 //sum.js
 const sum = (a, b) => a + b;
-
-module.exports = sum;
 ```
 
-* exports[variable_name]
+module.exports = sum;
 
-If you have more than one variable to export
+#### Named exports (several per module)
+
+If you have more than one variable to export, using exports[variable_name]
 
 ```javascript
 // usersController.js
@@ -94,9 +96,7 @@ exports.registerForm = (req, res) => {
 };
 ```
 
-##### import
-
-* import from module.exports
+#### import default exports
 
 We use **require** function and pass in **a relative path reference** to the module that we want to import code from
 
@@ -108,7 +108,7 @@ const total = sum(10, 5);
 console.log(total);
 ```
 
-* import from multiple explorts
+#### import from name explorts
 
 ```javascript
 // route.js
@@ -120,11 +120,9 @@ router.get('/login', userController.loginForm);
 router.post('/login', authController.login);
 ```
 
-#### ES6 Modules
+### ES6 Modules
 
-##### export in ES6
-
-* export default
+### default export in ES6
 
 ```javascript
 const sum = (a, b) => {
@@ -163,7 +161,7 @@ const hello = () => console.log("say hello");
 export default hello;
 ```
 
-* export multiple variables
+#### Named exports (several per module) in ES6
 
 ```javascript
 export const sum = () => {
@@ -174,7 +172,7 @@ export const minus = () => {
 }
 ```
 
-##### import in ES6
+#### import default in ES6
 
 * import from export default
 
@@ -182,7 +180,7 @@ export const minus = () => {
 import  sum from './sum';
 ```
 
-* import from multiple export
+#### import from Named exports in ES6
 
 ```javascript
 import * as helpers from './uti';
