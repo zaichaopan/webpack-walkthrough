@@ -6,6 +6,14 @@ Larevle mix and vue webpack-simple are great ways to quick set up vue in your pr
 
 1. [Webpack Introduction](#wepack-introduction)
 
+1. [Basic configuration](#basic-configuration)
+
+1. [Loader](#loader)
+
+1. [Plugin](#plugin)
+
+1. [Code Split and caching](#code-split-and-caching)
+
 ## Webpack Introduction
 
 Both Laravel mix and vue webpack-simple reply on webpack. So the first question is what is webpack and what is it used for?
@@ -86,13 +94,13 @@ module.exports = sum;
 If you have more than one variable to export, using exports[variable_name]
 
 ```javascript
-// usersController.js
-exports.loginForm = (req, res) => {
-    res.render('login', {title: 'Log IN'});
+// math.js
+exports.sum = (a, b) => {
+   return a + b;
 };
 
-exports.registerForm = (req, res) => {
-    res.render('register', { title: 'Register' });
+exports.minus = (a, b) => {
+  return a - b;
 };
 ```
 
@@ -112,17 +120,19 @@ console.log(total);
 
 ```javascript
 // route.js
-const userController = require('../controllers/userController');
-const { catchErrors } = require('../handlers/errorHandlers');
+const math = require('./math');
+// or
+const { sum } = require('./math');
 
-router.get('/', catchErrors(storeController.getStores));
-router.get('/login', userController.loginForm);
-router.post('/login', authController.login);
+//
+math.sum(1, 2);
+math.minus(2, 1);
+sum(1, 2)
 ```
 
 ### ES6 Modules
 
-### default export in ES6
+#### default export in ES6
 
 ```javascript
 const sum = (a, b) => {
@@ -189,11 +199,11 @@ import { sum } from './uti';
 
 If we only require or import something without assignment. We just only run that script.
 
-### problem with modules
+### problems with modules
 
-But breaking code into modules doesn't come free.
+Breaking large code into small modules makes it easy to maintainer, it doesn't come free. It introduces two main problems.
 
-* One module (file) may need to use code from other modules (files). So you need to make sure code needs to be executed in proper order.
+* One module (file) may need to use code from other modules (files). So you need to make sure code will be executed in proper order.
 
 * Loading many modules will cause peformance issues. So you need to merge them into a big file.
 
@@ -201,7 +211,75 @@ How can you do this? Webpack is a great tool to help you. Put it simply. Webpack
 
 Webpack can also do other jobs like converting ES6 to ES5, converting sass to css and compressing images. We will talk all of these in the later section.
 
-## loaders
+## Basic configuratin
+
+### Install webpack
+
+```terminal
+npm install --save webpack
+```
+
+### webpack.config.js
+
+In order for webpack to work, we need to have a configuration file in your app root directory to tell webpack what we want or need.  This file is called __webpack.config.js__.  This configuration will export a default object  which will be used by webpack. Since webpack is working in a node environment. You need to use CommonJS module systm.
+
+```javascript
+// webpack.config.js
+module.exports = {
+  //...
+}
+```
+
+or
+
+```javascript
+// webpack.config.js
+var configure = {
+  //
+}
+
+module.exports configure;
+```
+
+### entry property
+
+The first property we need to define in our webpack.config.js is the entry property. It tells webpack the entry point of our app. The entry point of our app is the bootstrap file of your app. It is the first file that needs to be executed when our app starts out in the browser. By convention, it is often called __index.js__ or __main.js__.  It only imports modules and doesn't export code. When we tell webpack our entry point, it will do the following two things.
+
+* First, it will instruct webpack that index.js is the first file webpack will execute when our application starts out in the browser.
+
+* Second, webpack will look what files that index.js imports and look at what files those files import, and so do and forms a tree structure
+
+#### two ways of defining webpack
+
+* using string value to represent a relative path to reference a file
+
+```javascript
+// webpack.config.js
+module.exports = {
+  entry: './src/index.js'
+}
+```
+
+By convention, we often put all side js files in a src directory. Now, webpack knows  __src/index.js__ is the first file to kick off our app.
+
+* using object
+
+Using string is to represent our entry is simply, but what if we want more entry files. Using object can solve the problem.
+
+```javascript
+// webpack.config.js
+module.exports = {
+  entry: {
+    app: './src/index.js',
+    vendor: ['JQuery'],
+  }
+}
+```
+
+By using this way, we can have two entry files. One is our own js file; one is for the libs we are using like Jquery. We will talk about why we need this in the section about code split. Another benefit of this way is we can use cache which will be discussed later.
+
+
+
 
 * vue-loader
 
