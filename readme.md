@@ -241,7 +241,7 @@ var configure = {
 module.exports configure;
 ```
 
-### entry property
+### Entry property
 
 The first property we need to define in our webpack.config.js is the entry property. It tells webpack the entry point of our app. The entry point of our app is the bootstrap file of your app. It is the first file that needs to be executed when our app starts out in the browser. By convention, it is often called __index.js__ or __main.js__.  It only imports modules and doesn't export code. When we tell webpack our entry point, it will do the following two things.
 
@@ -249,9 +249,9 @@ The first property we need to define in our webpack.config.js is the entry prope
 
 * Second, webpack will look what files that index.js imports and look at what files those files import, and so do and forms a tree structure
 
-#### two ways of defining webpack
+#### Two ways of defining webpack
 
-* using string value to represent a relative path to reference a file
+* Using a string value to represent a relative path of the entry file
 
 ```javascript
 // webpack.config.js
@@ -260,11 +260,11 @@ module.exports = {
 }
 ```
 
-By convention, we often put all side js files in a src directory. Now, webpack knows  __src/index.js__ is the first file to kick off our app.
+By convention, we often put all site js files in a src directory. Now, webpack knows  __src/index.js__ is the first file to kick off our app.
 
-* using object
+* Using object
 
-Using string is to represent our entry is simply, but what if we want more entry files. Using object can solve the problem.
+Using a string to represent our entry is simple, but what if we want more entry files. Using object can solve the problem.
 
 ```javascript
 // webpack.config.js
@@ -276,8 +276,108 @@ module.exports = {
 }
 ```
 
-By using this way, we can have two entry files. One is our own js file; one is for the libs we are using like Jquery. We will talk about why we need this in the section about code split. Another benefit of this way is we can use cache which will be discussed later.
+By this way, we can have multiple entries. One is our own js file; the other is for the libs we are using like JQuery. We will talk about why we need multiple entries in the code split section.
 
+### Output property
+
+We have defined the entry of our app. Since webpack's main job is merge individual files into a big bundle file. We need to tell webpack where to store the output and what the name of the output is. So we need to define the output property in the configuration object.
+
+```javascript
+// webpack.config.js
+var path = require('path');
+
+module.exports = {
+  entry: {
+    app: './src/index.js',
+  },
+  output: {
+    path: path.resolve(__dirname, 'build'),
+    fileName: 'bundle.js'
+  }
+}
+```
+
+* path: different from entry, path in output property has to be an absolute path. The **require statement** here will be handled by node.js runtime itself not webpack. When we run webpack, we run it in a node js environment, so we can use any pieces of node js technology. The path module has a function on it called **resolve(__dirname, 'dist')**. **__dirname** is a const in node js which references to the current working directory. The second param we use string __'build'__ or __'dist'__. This is the convention, we put the bundle.js inside the build (dist) directory.
+
+* fileName: We can hardcode the name of the output file. Like the example above, or you can use placeholder __name__ to take use of the name of the entry point. This is very useful when we have multiple files.
+
+```javascript
+// webpack.config.js
+var path = require('path');
+
+module.exports = {
+  entry: {
+    app: './src/index.js',
+  },
+  output: {
+    path: path.resolve(__dirname, 'build'),
+    fileName: '[name].js'
+  }
+}
+```
+
+Now, the output file will be __app.js__.  You can also add a hash section in the filename: __fileName: '[name].[hash].js'__. We will talk about in code split.
+
+### Run webpack
+
+In order to run webpack, we need to configure the package.json script.
+
+```javascript
+//package.json
+"scripts": {
+    "build": "webpack"
+  },
+```
+
+Now when you run **npm run build**, it will trigger **webpack**. If you want to watch the changes, you can add **--watch** after the webpack. Or create another one
+
+```json
+//package.json
+"scripts": {
+    "build": "webpack",
+    "watch": "webpack --watch"
+  },
+```
+
+or using optional argument: --
+
+```json
+//package.json
+"scripts": {
+    "build": "webpack",
+    "watch": "npm run build -- --watch"
+  },
+```
+
+Now when running npm run watch, it will add --watch after npm run build. This is very useful when you don't want to repeat.
+
+We have to use doube quotes. By adding this command, we can use **npm run build** in our terminal. 
+
+#### Install webpack globally
+
+You may ask why not install webpack globally using -g and run it instead of creating a script command in package.json. When installing **globaly**, we can only have a version of module at a time (one version of webpack). But by putting it into our app's node_modules and using **npm run build**, we just use the webpack for that particular project
+
+#### What bundle.js look like
+
+From the output, we will find that the bundle.js file, is much bigger compare to the individual modules. So what webpack is doing to our js file? What webpack is doing is similar to this
+
+```javascript
+var myModuels = [
+    function () {
+        const sum = (a, b) => a + b;
+        return sum;
+    },
+
+    function () {
+        const sum = myModules[0]();
+        const total = sum(10, 10);
+        console.log(total);
+    }
+]
+
+var entryPointIndex = 1;
+myModules[entryPointIndex]();
+```
 
 
 
