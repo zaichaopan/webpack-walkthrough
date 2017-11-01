@@ -36,15 +36,11 @@ Webpack is a great tool to build javascript and site assets like css/images. But
 
 * __Server Side Templating (SST)__:
 
-Backend server creates a HTML document and sends it to the user. This HTML Document is fully renderd and has all the required information that users want to see.
+Backend server creates a HTML document and sends it to the user. This HTML Document is fully renderd and has all the required information that users want to see. SST may not need a lot of js code.
 
 * __Single Page Application__:
 
-Server sends a bare-bones HTML doc to the user. Javasacript runs on the users machine to assemble to full web page.
-
-|  | SST | SPA |
-| --- | --- | --- |
-| js  | may not need a lot of js code | needs a lot of js code |
+Server sends a bare-bones HTML doc to the user. Javasacript runs on the users machine to assemble to full web page. SPA needs a lot of js code.
 
 #### Problems with a huge amount of JS code
 
