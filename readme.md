@@ -14,7 +14,11 @@ Larevle mix and vue-webpack-simple are great ways to quickly set up vue in your 
     1. [webpack.config.js](#webpack.config.js)
         1. [entry](#entry)
         1. [output](#output)
+    1. [run webpack](#run-webpack)
 1. [Loader](#loader)
+    1. [Babel loader](#babel-loader)
+    1. [CSS loader](#css-loader)
+    1. [SASS loader](#sass-loader)
 
 1. [Plugin](#plugin)
 
@@ -369,7 +373,324 @@ var entryPointIndex = 1;
 myModules[entryPointIndex]();
 ```
 
+## Loader and plugins
 
+Module loaders are used to do some prepprocessing on files before they are added to our bundle.js. Loaders are like transformers. They are commonly used to convert ES6 code to ES5 code. They can also be used to handle css/sass/images/files with different loaders.
+
+In order to use loaders,  we need to define a property called **module** Inside there, we need to define a rules property which is an array.  Each item of the array is an object to define a loader/rule
+
+```javascript
+//webpack.config.js
+const path = require('path');
+
+const config = {
+    entry:  './src/index.js',
+    output: {
+        path: path.resolve(__dirname, 'build'), 
+        filename: 'bundle.js'
+    },
+    module: {
+        rules: [
+            {
+                use: loader_name,
+                test: regular_expression
+            }
+        ]
+    }
+};
+
+module.exports = config;
+```
+
+* loader_name: specify which loader to use
+
+* regular expression: speicify which modules you want to apply the loader to
+
+### Babel loader
+
+Difference between loader and webpack
+
+| Babel | Webpack |
+| --- | --- |
+|Turn ES2015 (ES6) code into ES5 code | Link up JS modules together |
+
+We need to set up 3 modules to get babel working
+
+| babel-lader | babel-core | babel-preset-env |
+| --- | --- | --- |
+| Teaches babel how to work with webpack | Knows how to take in code, parse it, and generate some output files | Ruleset for telling babel exactly what pieces of ES6/7 syntax to look for and how to turn it into ES5
+
+#### install babel loader
+
+```shell
+npm install --save-dev babel-loader babel-core babel-preset-env
+```
+
+#### configure babel loader rule
+
+```javascript
+//webpack.config.js
+const path = require('path');
+
+const config = {
+    entry:  './src/index.js',
+    output: {
+        path: path.resolve(__dirname, 'build'), 
+        filename: 'bundle.js'
+    },
+    module: {
+        rules: [
+            {
+                use: 'babel-loader',
+                test: /\.js$/
+            }
+        ]
+    }
+};
+
+module.exports = config;
+```
+
+#### define preset-env
+
+We need to tell babel what kind of rule to compile (babel-preset-env). To do that, create a file .babelrc in the root directory. Inside it, we need to create an object and define a presents property
+
+```javascript
+//.babelrc (has to use double quotes)
+{
+    "presets": ["babel-preset-env"]
+}
+```
+
+### CSS loader 
+
+You may need to import css file to your module, webpack doesn't know have to handle css. We need to use css loader to handle css module.
+
+Example: We have to files:
+
+* image.js
+
+* image.css
+
+```javascript
+// image.js
+import '../styles/image.css';
+```
+
+Or in your entry file (index.js/main.js), you want to import/require css file
+
+```javascript
+//index.js
+import './main.css';
+// or
+require('./main.css');
+```
+
+Now, we need to make sure our webpack and apply css loader to it. We need to install two modules
+
+| css-loader | style-loader |
+| --- | --- |
+| knows how to deal with css imports | take css import and add them to the html document |
+
+Install style-loader and css-loader
+
+```terminal
+npm install --save-dev style-loader css-loader
+```
+
+In webpack.config.js
+
+```javascript
+const path = require('path');
+
+const config = {
+    entry:  './src/index.js',
+    output: {
+        path: path.resolve(__dirname, 'build'), 
+        filename: 'bundle.js'
+    },
+    module: {
+        rules: [
+            {
+                use: 'babel-loader',
+                test: /\.js$/
+            },
+            {
+                use: ['style-loader', 'css-loader'],
+                test: /\.css$/
+            }
+        ]
+    }
+};
+
+module.exports = config;
+```
+
+The css loaders have to be in **right order**: style-loader and then css-loader because it takes effect from right to left.
+
+After running npm run dev, and open the file in the browser, you will find it add the css style to head section of the html document. So the question is how can the webpack modify the html and insert the style? Actually webpack didn't modify the html, style-loader will inject css to the dom in the head section. But this approach has some downsides. In particularly, loading css in a separate file is a lot faster than loading all css and js in the same file. To do this, we need to use another library in our build process.
+
+### extract-text-webpack-plugin
+
+Install extract-text-webpack-plugin
+
+```shell
+npm install --save-dev extract-text-webpack-plugin
+```
+
+```javascript
+const path = require('path');
+const ExtractTextPlugin = require("extract-text-webpack-plugin");
+
+const config = {
+    entry:  './src/index.js',
+    output: {
+        path: path.resolve(__dirname, 'build'), 
+        filename: 'bundle.js'
+    },
+    module: {
+        rules: [
+            {
+                use: 'babel-loader',
+                test: /\.js$/
+            },
+            {
+                use: ExtractTextPlugin.extract({
+                    fallback: "style-loader",
+                    use: "css-loader"
+                  }),
+                test: /\.css$/
+            }
+        ]
+    },
+    plugins: [
+        new ExtractTextPlugin('style.css')
+    ]
+};
+
+module.exports = config;
+```
+
+add css file to html
+
+```html
+    <link rel="stylesheet" href="build/style.css"></link>
+```
+
+### Sass loader
+
+To install
+
+```shell
+npm install sass-loader node-sass
+```
+
+* inject to head
+
+```javascript
+// webpack.config.js
+module.exports = {
+    //...
+    module: {
+        rules: [{
+            test: /\.scss$/,
+            use: [{
+                loader: "style-loader" // creates style nodes from JS strings
+            }, {
+                loader: "css-loader" // translates CSS into CommonJS
+            }, {
+                loader: "sass-loader" // compiles Sass to CSS
+            }]
+        }]
+    }
+};
+```
+
+or
+
+```javascript
+// webpack.config.js
+module.exports = {
+    //...
+    module: {
+        rules: [{
+            test: /\.scss$/,
+            use: ["style-loader", "css-loader", "sass-loader"]
+        }]
+    }
+};
+```
+
+The order is important. It takes affect from right to left. First covert sass to css and then convert css to commonJs module (it wraps your css into a commonJs module) and then inject it to the head of the page.
+
+To extract to a separate file
+
+```javascript
+const ExtractTextPlugin = require("extract-text-webpack-plugin");
+
+module.exports = {
+    //...
+    module: {
+        rules: [{
+            test: /\.scss$/,
+            use: ExtractTextPlugin.extract({
+                use: ['css-loader', 'sass-loader'],
+                // for things that cannot be extracted
+                fallback: "style-loader"
+            })
+        }]
+    },
+    plugins: [
+        new ExtractTextPlugin('style.css')
+        // or you can use placeholder for name
+        // new ExtactTextPlugin('[name].css'), it will use the name of you js entry file
+    ]
+};
+```
+
+Remember we have to use it to make it work. Import the sass file in module or your entry file. If you don't want to add the scss to your js file, you can add it to your webpack.config.js entry point
+
+```javascript
+// webpack.config.js
+module.exports = {
+    entry: {
+        app: [
+            './src/main.js',
+            './src/main.scss'
+        ]
+    },
+    output: {
+        //
+    }
+}
+```
+
+We can also specify when to minify our css file
+
+```javascript
+// webpack.config.js
+const ExtractTextPlugin = require("extract-text-webpack-plugin");
+
+module.exports = {
+    //...
+    module: {
+        rules: [{
+            test: /\.scss$/,
+            use: ExtractTextPlugin.extract({
+                use: ['css-loader', 'sass-loader'],
+                // for things that cannot be extracted
+                fallback: "style-loader"
+            })
+        }]
+    },
+    plugins: [
+        new ExtractTextPlugin('style.css'),
+        new webpack.LoaderOptionsPlugin({
+            minimize: inProduction
+        })
+    ]
+};
+```
 
 * vue-loader
 
