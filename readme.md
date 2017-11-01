@@ -1,11 +1,11 @@
 # Webpack
 
-Larevle mix and vue-webpack-simple are great ways to quickly set up vue in your project. But at some point, you might wander how these things work. And you have a lot of confuse. You want to know more to feel more confortable or have more control of your project. This repos will show things behind the screen.
+Larevel mix and vue-webpack-simple are great ways to quickly set up vue in your project. But at some point, you might wander how these things work. You have a lot of confuse. You want to know more to feel more confortable or have more control of your project. This repos will show things behind the screen.
 
-## Table of Contents
+## Table of Content
 
-1. [Webpack Introduction](#wepack-introduction)
-    1. [SST and SPA](#SST-and-SPA)
+1. [Webpack Introduction](#webpack-introduction)
+    1. [SST and SPA](#sst-and-spa)
     1. [Js modules](#js-modules)
         1. [CommonJs](#commonjs)
         1. [ES6 module](#es6-modules)
@@ -36,15 +36,11 @@ Webpack is a great tool to build javascript and site assets like css/images. But
 
 * __Server Side Templating (SST)__:
 
-Backend server creates a HTML document and sends it to the user. This HTML Document is fully renderd and has all the required information that users want to see. That is:
-
-Users Visit Page&#8594;HTTP request to server&#8594;New HTML Document&#8594;React/Angular/vue boots up&#8594;show page content.
+Backend server creates a HTML document and sends it to the user. This HTML Document is fully renderd and has all the required information that users want to see.
 
 * __Single Page Application__:
 
-Server sends a bare-bones HTML doc to the user. Javasacript runs on the users machine to assemble to full web page. That is:
-
-Users Visit Page&#8594;HTTP request to server&#8594;New HTML Document&#8594;React/Angular/vue boots up&#8594;show page content.
+Server sends a bare-bones HTML doc to the user. Javasacript runs on the users machine to assemble to full web page.
 
 |  | SST | SPA |
 | --- | --- | --- |
@@ -78,14 +74,10 @@ In order to access the code in sum.js, we have to form __an explicit link__ betw
 
 Common JS is the module system implemented by Node.js. If we are only in a node environment, we can only use CommonJS (like the webpack.config.js we will discuss later)
 
-| default exports (one per module) | named exports (several per module)|
-| --- | --- |
-| module.exports | exports.variableName|
-
 |  | Default | Named |
 | --- | --- | --- |
 | export | module.exports | exports.variable |
-| import | var variable = require(module_relatiave_path) |  var variable = require(module_relatiave_path) |
+| import | const variable = require(module_relatiave_path) |  const variable = require(module_relatiave_path) or   const {variable} = require(module_relatiave_path)  |
 
  Default exports example
 
@@ -132,7 +124,7 @@ sum(1, 2)
 | syntax| default | named |
 | --- | --- | --- |
 | export | export default | export variable|
-| import | import variable from 'module_relative_path' | import * as variable from 'module_relatiave_path' or import { ...} from 'module_relative_path' |
+| import | import variable from 'module_relative_path' | import * as variable from 'module_relatiave_path' or import { variable } from 'module_relative_path' |
 
 default export example
 
@@ -206,8 +198,6 @@ Breaking large code into small modules makes it easy to maintainer, it doesn't c
 How can you do this? Webpack is a great tool to help you. Put it simply. Webpack's main job is merge many small, individual js modules into a big bundle js file and make sure they are exected in the propered order.
 
 Webpack can also do other jobs like converting ES6 to ES5, converting sass to css and compressing images. We will talk all of these in the later section.
-
-[Back to Top](#webpack)
 
 [Back to Top](#webpack)
 
