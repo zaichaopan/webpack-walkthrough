@@ -19,10 +19,12 @@ Larevle mix and vue-webpack-simple are great ways to quickly set up vue in your 
     1. [Babel loader](#babel-loader)
     1. [CSS loader](#css-loader)
     1. [SASS loader](#sass-loader)
-
-1. [Plugin](#plugin)
-
+    1. [vue loader](#vue-loader)
+    1. [image loader](#image-loader)
+1. [The Relative URL Conundrum](#the-relative-url-conundrum)
+1. [Minification and Environments](#minification-and-environments)
 1. [Code Split and caching](#code-split-and-caching)
+1. [NPM](#NPM)
 
 ## Webpack Introduction
 
@@ -692,13 +694,19 @@ module.exports = {
 };
 ```
 
-* vue-loader
+More info about [minification and environments](#minification-and-environments)
 
-* css-loader
+### vue-loader
 
-* vue-template-compiler
+vue-loader needs css-loader and vue-template-compiler
 
-## [runtime-compiler vs runtime-only](https://vuejs.org/v2/guide/installation.html#Runtime-Compiler-vs-Runtime-only)
+Install
+
+```shell
+npm install --save vue-loader css-loader vue-template-compiler
+```
+
+### [runtime-compiler vs runtime-only](https://vuejs.org/v2/guide/installation.html#Runtime-Compiler-vs-Runtime-only)
 
 For full build, you need to add need to configure an alias in your bundler:
 
@@ -709,7 +717,20 @@ module.exports = {
     alias: {
       'vue$': 'vue/dist/vue.esm.js' // 'vue/dist/vue.common.js' for webpack 1
     }
-  }
+  },
+
+   module: {
+        rules: [
+          //....
+            {
+                test: /\.vue$/,
+                exclude: /(node_modules|bower_components)/,
+                use: {
+                    loader: 'vue-loader'
+                }
+            }
+        ]
+    }
 }
 ```
 
@@ -735,7 +756,629 @@ Vue.component('todo-list, require('./src/TodoList.vue').default);
 
 If you still like the use the old way (like laravel mix), turn esModule off in the webpackconfig, see laravel mix [config](https://github.com/JeffreyWay/laravel-mix/blob/master/src/config.js)
 
+### image-loader
 
+We can easily find that each time it takes some time for the image to load. This is the downside of using an outside image. It will be faster if we host the image ourselves.
+
+We can use image-loader, url-loader and file-loader to handle image for us.
+
+| url-loader | file-loader |
+| --- | --- |
+| Converting images to base64 strings and storing those inline in the code. For images with sizes larger than the specified limit, the url-loader, instead of converting it to base64 string, it will pass on the image to file-loader. | compress large image file |
+
+```shell
+ npm install --save-dev image-webpack-loader url-loader file-loader
+```
+
+```javascript
+const path = require('path');
+const ExtractTextPlugin = require("extract-text-webpack-plugin");
+
+const config = {
+    entry: './src/index.js',
+    output: {
+        path: path.resolve(__dirname, 'build'),
+        filename: 'bundle.js',
+        publicPath: 'build/'
+    },
+    module: {
+        rules: [{
+                use: 'babel-loader',
+                test: /\.js$/,
+                exclude: /node_modules/
+            },
+            {
+                use: ExtractTextPlugin.extract({
+                    fallback: "style-loader",
+                    use: "css-loader"
+                }),
+                test: /\.css$/
+            },
+            {
+                test: /\.(jpe?g|png|gif|svg)$/,
+                use: [{
+                        loader: 'url-loader',
+                        options: {
+                            limit: 40000
+                        }
+                    },
+                    {
+                        loader: 'image-webpack-loader',
+                      },
+                ]
+            },
+        ]
+    },
+    plugins: [
+        new ExtractTextPlugin('style.css')
+    ]
+};
+
+module.exports = config;
+```
+
+Example: Put two images in assets folder, and import them in image_viewer.js
+
+```javascript
+// iamge_viewer.js
+import big from '../assets/big.jpg';
+import small from '../assets/small.jpg';
+import '../styles/image_viewer.css';
+
+const image = document.createElement('img');
+image.src = 'http://lorempixel.com/400/400';
+
+document.body.appendChild(image);
+```
+
+To use the image
+
+```javascript
+// imgge_viewer.js
+import big from '../assets/big.jpg';
+import small from '../assets/small.jpg';
+import '../styles/image_viewer.css';
+
+const image = document.createElement('img');
+image.src = small;
+
+document.body.appendChild(image);
+
+const bigImage = document.createElement('img');
+bigImage.src = big;
+
+document.body.appendChild(bigImage);
+```
+
+But when we view the page, we can see the big image, because the path is incorrecet, to fix the path, we need to config a public path in the webpack.config.js
+
+```javascript
+//webpack.config.js
+const path = require('path');
+const ExtractTextPlugin = require("extract-text-webpack-plugin");
+
+const config = {
+    entry: './src/index.js',
+    output: {
+        path: path.resolve(__dirname, 'build'),
+        filename: 'bundle.js',
+        publicPath: 'build/'
+    },
+    module: {
+        rules: [{
+                use: 'babel-loader',
+                test: /\.js$/
+            },
+            {
+                use: ExtractTextPlugin.extract({
+                    fallback: "style-loader",
+                    use: "css-loader"
+                }),
+                test: /\.css$/
+            },
+            {
+                test: /\.(jpe?g|png|gif|svg)$/,
+                use: [{
+                        loader: 'url-loader',
+                        options: {
+                            limit: 40000
+                        }
+                    }
+                ]
+            },
+        ]
+    },
+    plugins: [
+        new ExtractTextPlugin('style.css')
+    ]
+};
+
+module.exports = config;
+```
+
+After rebuilding and refresh the page, everthing is working. Why? URL Loader emits the URL of the file, with **output.publicPath** prepended to the URL
+
+```javascript
+//image_viewer.js
+import big from '../assets/big.jpg';
+
+```
+
+After apply the url-loader, it gets the new file name of the image and assign it to the big variable. If we define **output.publicPath** in web.config.js, it will take the value and prepend to the file name
+
+[Back to Top](#webpack)
+
+## The Relative URL Conundrum
+
+Let's say you reference a image in your main.scss. In your public or dist directory, you can have an image (dist/images/stub.png)
+
+```scss
+.test {
+    background: url('./images/stub.png')
+}
+```
+
+You assume that when you use webpack to complie things done and put it into the dist directory. You can reference to the image. But the problem is webpack assume the directory is the relative reference based on your main.scss. So it cannot find an image folder and stub.png there. So it will throw an error. To fix this problem, there are some solutions
+
+### using absolute path
+
+```scss
+.test {
+    background: url('/images/stub.png')
+}
+```
+
+css loder will ignore it entirely
+
+### tell css loder to not include url
+
+```javascript
+const ExtractTextPlugin = require("extract-text-webpack-plugin");
+
+module.exports = {
+    //...
+    module: {
+        rules: [{
+            test: /\.scss$/,
+            use: ExtractTextPlugin.extract({
+                use: [
+                    {
+                        loader: 'css-loader',
+                        options: { url: false}
+                    },
+                    'sass-loader'
+                    ],
+                    fallback: "style-loader"
+            })
+        }]
+    },
+    plugins: [
+        new ExtractTextPlugin('style.css'),
+        new webpack.LoaderOptionsPlugin({
+            minimize: inProduction
+        })
+    ]
+};
+```
+
+### using raw loader
+
+It will import a file a string and not processing
+
+Install raw loader
+
+```terminal
+npm install raw-loader --save-dev
+```
+
+```javascript
+const ExtractTextPlugin = require("extract-text-webpack-plugin");
+
+module.exports = {
+    //...
+    module: {
+        rules: [{
+            test: /\.scss$/,
+            use: ExtractTextPlugin.extract({
+                use: ['raw-loader', 'sass-loader'],
+                fallback: "style-loader"
+            })
+        }]
+    },
+    plugins: [
+        new ExtractTextPlugin('style.css'),
+        new webpack.LoaderOptionsPlugin({
+            minimize: inProduction
+        })
+    ]
+};
+```
+
+### use url-loader for file folder
+
+This is useful for a new project
+
+You can put your image in src/images folder instead of dist. So now the problem is we need to move the images to public or dist folder
+
+url loader
+
+```javascript
+module.exports = {
+  module: {
+    rules: [
+      {
+        test: /\.css$/,
+        use: [ 'style-loader', 'css-loader' ]
+      },
+      {
+        test: /\.(png|jpg|gif|svg|eot|ttf|woff|woff2)$/,
+        loader: 'url-loader',
+        options: {
+          limit: 10000
+        }
+      }
+    ]
+  }
+}
+```
+
+file loader
+
+```javascript
+// webpack.config.js
+
+rules: [
+    //...
+    {
+        test: /\.(png|jpg|gif|svg|eot|ttf|woff|woff2)$/,
+        use: 'file-loader'
+    }
+]
+```
+
+Then you will see the file loader took the image to dist folder and give it a md5 name and update the url in css
+
+## Minification and Environments
+
+To minifiy our code, we need to use webpack.optimize.UglifyJsPlugin
+
+```javascript
+// webpack.config.js
+
+plugins: [
+    new webpack.optimize.UglifyJsPlugin()
+]
+```
+
+But now the issuse is in the development, we don't want to minify. So we need to check our environment first
+
+```javascript
+ // webpack.config.js
+
+ module.exports = {
+     // ...
+     plugins: []
+ };
+
+ if (process.env.NODE_ENV === 'production') {
+     module.exports.plugins.push(
+         new webpack.optimize.UglifyJsPlugin()
+     )
+ }
+```
+
+So we can go back to package.json to add a new script
+
+```json
+{
+    "scripts": {
+        "dev": "webpack",
+        "production": "NODE_ENV=production webpack",
+        "watch": "npm run dev -- --watch"
+    }
+}
+```
+
+By using "NODE_ENV=production", we set the environment to production. And now when we run **npm run production**, it will uglify our file.
+
+YOu can also save the result of whether in development node in a variable. Then it can be used in anywhere you need.
+
+```javascript
+//webpack.config.js
+var inProduction = (process.env.NODE_ENV === 'production');
+
+if (inProduction) {
+    //...
+}
+```
+
+## Purify CSS
+
+### Installation
+
+This plugin uses PurifyCSS to remove unused selectors from your CSS. You should use it with the extract-text-webpack-plugin.
+
+```shell
+npm i -D purifycss-webpack purify-css
+```
+
+```javascript
+// webpack.config.js
+const path = require('path');
+const glob = require('glob');
+const ExtractTextPlugin = require('extract-text-webpack-plugin');
+const PurifyCSSPlugin = require('purifycss-webpack');
+
+module.exports = {
+  entry: {...},
+  output: {...},
+  module: {
+    rules: [
+      {
+        test: /\.css$/,
+        loader: ExtractTextPlugin.extract({
+          fallbackLoader: 'style-loader',
+          loader: 'css-loader'
+        })
+      }
+    ]
+  },
+  plugins: [
+    new ExtractTextPlugin('[name].[contenthash].css'),
+    // Make sure this is after ExtractTextPlugin!
+    new PurifyCSSPlugin({
+      // Give paths to parse for rules. These should be absolute!
+      paths: glob.sync(path.join(__dirname, 'app/*.html')), // In Laravle, resources/views/**/*.blade.php
+      minimize: inProduction
+    })
+  ]
+};
+```
+
+[Back to Top](#webpack)
+
+## Code Split and caching
+
+```javascript
+// webpack.config.js
+module.exports = {
+    entry: {
+        main: './src/main.js'
+    },
+
+    output: {
+        path: path.resolve(__dirname, './dist');
+        filename: '[name].[hash].js'
+    }
+}
+```
+
+If you put hash in the output file name, webpack will generate an unique hash for us. You will get a file main.has_id.js. The purpose of this is we can cach in our server.
+
+For multiple entries
+
+```javascript
+// webpack.config.js
+module.exports = {
+    entry: {
+        main: './src/main.js',
+        vendor: ['jquery']
+    }
+}
+```
+
+It will create two files in the dist folder, they have the same hash id. If we change code in main.js and build again. Both of them will use a new same hash id again. But we don't want that, because we jQuery didn't change. So we need to create a hash id for each one of them
+
+```javascript
+// webpack.config.js
+module.exports = {
+    entry: {
+        main: './src/main.js'
+    },
+
+    output: {
+        path: path.resolve(__dirname, './dist');
+        filename: '[name].[chunkhash].js'
+    }
+}
+```
+
+Now each of them has a different hash. But we find that each tiem it creates a new main file with different hash. We need to clear the old one. We can use **clean-webpack-plugin**
+
+```shell
+npm i clean-webpack-plugin --save-dev
+```
+
+```javascript
+// webapck.config.js
+const CleanWebpackPlugin = require('clean-webpack-plugin'); //installed via npm
+
+const path = require('path');
+
+// the path(s) that should be cleaned
+let pathsToClean = [
+  'dist'
+]
+
+// the clean options to use
+let cleanOptions = {
+  root:    __dirname,
+  verbose:  true,
+  dry:      false
+}
+
+
+// sample WebPack config
+const webpackConfig = {
+  entry: {
+      //...
+  },
+  output: {
+      //...
+  },
+  module: {
+   //...
+  },
+  plugins: [
+    new CleanWebpackPlugin(pathsToClean, cleanOptions)
+  ]
+```
+
+### Vendor code spliting
+
+We change our js code frequently. But we update our vendor (react/vue/angular) infrequently. So it will be great if we can split one big bundle.js into two parts. One for our own js. One for the vendor. In this way, the browser will cache the vendor js for a long time.
+
+```javascript
+// webpack.config.js
+const VENDOR_LIBS = [
+    'react', 'loadsh', 'redux', 'react-dux' , ...
+];
+
+module.exports = {
+    entry: {
+        bundle: './src/index.js',
+        vendor: VENDOR_LIBS
+    },
+    output: {
+        path: path.joins(__dirname, 'dist'),
+        filename: '[name].js'
+    },
+    module: {
+        //...
+    }
+}
+```
+
+We are using an object or our entry instead of a string. In this way, we can have multiple entires. Like the first entry, we want to use .src/index.js, the output will be called bundle.  The second one we want to call it vendor.js. We can go to our dependencies and put them in the vendor file. We cannot hard code the name. Otherwise they will have the same name.
+
+After running, we find that we get a vendor.js file, but our bundle.js size didn't reduce. This is because in your own js file, you depend on library like react, redux. You import them to your own js files. By default, when webpack see your file import these library, so it will grap them and put them inside the one big bundle file.
+
+In order to not double including the libs, we need to use a plugin called CommonsChunkPlugin
+
+```javascript
+// webpack.config.js
+const VENDOR_LIBS = [
+    'react', 'loadsh', 'redux', 'react-dux' , ...
+];
+
+module.exports = {
+    entry: {
+        bundle: './src/index.js',
+        vendor: VENDOR_LIBS
+    },
+    output: {
+        path: path.joins(__dirname, 'dist'),
+        filename: '[name].js'
+    },
+    module: {
+        //...
+    },
+    plugins: [
+        new webpack.optimize.CommonsChunkPlugin({
+            name: 'vendor'
+        })
+    ]
+}
+```
+
+## How to reference vendor.js in index.html
+
+We can add the vendor.js to index.html. But if we split the code into different files. Each time we add or remove one, we have to change index.html. So we need to find a way to automatically do this for us. We need to use a plugin - html-webpack-plugin.
+
+```terminal
+npm install html-webpack-plugin --save-dev
+```
+
+```javascript
+// webpack.config.js
+
+var HtmlWebpackPlugin = require('html-webpack-plugin');
+
+const VENDOR_LIBS = [
+    'react', 'loadsh', 'redux', 'react-dux' , ...
+];
+
+module.exports = {
+    entry: {
+        bundle: './src/index.js',
+        vendor: VENDOR_LIBS
+    },
+    output: {
+        path: path.joins(__dirname, 'dist'),
+        filename: '[name].js'
+    },
+    module: {
+        //...
+    },
+    plugins: [
+        new webpack.optimize.CommonsChunkPlugin({
+            name: 'vendor'
+        }),
+        new HtmlWebpackPlugin({
+            template: 'src/index.html',
+        })
+    ]
+}
+```
+
+We can move our index.html to src from root (because now it becomes a part of src). We need to delete the script tag in our index.html
+
+```html
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <link href=""></link>
+</head>
+<body>
+    <div id="root"></div>
+</body>
+</html>
+```
+
+### caching
+
+How browser knows if it has downloaded a file before? By default, the browser will look for the exact file name of the file like bundle.js. If the name has not change, the browser will use the cached version. So we need a file to tell browser when a js file has changed. We need to use chunkhash
+
+```javascript
+// webpack.config.js
+
+var HtmlWebpackPlugin = require('html-webpack-plugin');
+
+const VENDOR_LIBS = [
+    'react', 'loadsh', 'redux', 'react-dux' , ...
+];
+
+module.exports = {
+    entry: {
+        bundle: './src/index.js',
+        vendor: VENDOR_LIBS
+    },
+    output: {
+        path: path.joins(__dirname, 'dist'),
+        filename: '[name].[chunkhash].js'
+    },
+    module: {
+        //...
+    },
+    plugins: [
+        new webpack.optimize.CommonsChunkPlugin({
+            names: ['vendor', 'manifest']
+        }),
+        new HtmlWebpackPlugin({
+            template: 'src/index.html',
+        })
+    ]
+}
+```
+
+We need to generate a manifest to better tell browser on whether or not the vendor file has been changed.
+
+We need to use old js file after each build
+
+[Back-to-top](#webpack)
 
 ## NPM
 
