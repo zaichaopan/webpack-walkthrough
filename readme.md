@@ -207,7 +207,7 @@ npm install --save webpack
 
 ### webpack.config.js
 
-In order for webpack to work, we need to have a configuration file in your app root directory to tell webpack what we want or need.  This file is called __webpack.config.js__.  This configuration will export a default object  which will be used by webpack. Since webpack is working in a node environment, you need to use CommonJS module systm.
+In order for webpack to work, we need to have a configuration file in our app root directory to tell webpack what we want or need. This file is called __webpack.config.js__.  This configuration will export a default object  which will be used by webpack. Since webpack is working in a node environment, you need to use CommonJS module systm.
 
 ```javascript
 // webpack.config.js
@@ -231,9 +231,9 @@ module.exports configure;
 
 The first property we need to define in our webpack.config.js is the entry property. It tells webpack the entry point of our app. The entry point is the bootstrap file of our app. It is the first file that needs to be executed when our app starts out in the browser. By convention, it is often called __index.js__ or __main.js__.  It only imports modules and doesn't export code. When we have entry point in the configuration file, it will do the following two things.
 
-* First, it will instruct webpack that index.js is the first file webpack will execute when our application starts out in the browser.
+* It will instruct webpack that index.js is the first file webpack will execute when our application starts out in the browser.
 
-* Second, webpack will look what files that index.js imports and look at what files those files import, and so do and forms a tree structure
+* Webpack will look what files that index.js imports and look at what files those files import, and so do and forms a tree structure
 
 There are two ways to define entry.
 
@@ -246,7 +246,7 @@ module.exports = {
 }
 ```
 
-By convention, we often put all site js files in a src directory. Now, webpack knows  __src/index.js__ is the first file to kick off our app.
+By convention, we often put all site js files in a directory named __src__. Now, webpack knows  __src/index.js__ is the first file to kick off our app.
 
 * Using object
 
@@ -257,7 +257,7 @@ Using a string to represent our entry is simple, but what if we want more entry 
 module.exports = {
   entry: {
     app: './src/index.js',
-    vendor: ['JQuery'],
+    vendor: ['Jquery'],
   }
 }
 ```
@@ -302,7 +302,7 @@ module.exports = {
 }
 ```
 
-Now, the output file will be __app.js__.  You can also add a hash section in the filename: __fileName: '[name].[hash].js'__. We will talk about in code split.
+Now, the output file will be __app.js__.  You can also add a hash section in the filename: __fileName: '[name].[chunkhash].js'__. We will talk about in code split.
 
 ### Run webpack
 
