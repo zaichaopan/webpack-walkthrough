@@ -1,9 +1,8 @@
 var path = require('path');
+var webpack = require('webpack');
 var ExtractTextPlugin = require("extract-text-webpack-plugin");
-var CommonsChunkPlugin = require("webpack/lib/optimize/CommonsChunkPlugin");
 var CleanWebpackPlugin = require('clean-webpack-plugin');
 var ManifestPlugin = require('webpack-manifest-plugin');
-var UglifyJSPlugin = require('uglifyjs-webpack-plugin')
 var pathsToClean = ['dist']
 let cleanOptions = {
     root: __dirname,
@@ -59,7 +58,10 @@ module.exports = {
     },
     plugins: [
         new ExtractTextPlugin('[name].[hash].css'),
-        new CommonsChunkPlugin({
+        new webpack.LoaderOptionsPlugin({
+            minimize: inProduction
+        }),
+        new webpack.optimize.CommonsChunkPlugin({
             names: ['vendor', 'manifest']
         }),
         new CleanWebpackPlugin(pathsToClean, cleanOptions),
@@ -69,6 +71,6 @@ module.exports = {
 
 if (inProduction) {
     module.exports.plugins.push(
-        new UglifyJSPlugin()
+        new webpack.optimize.UglifyJsPlugin()
     )
 }
