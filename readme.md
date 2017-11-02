@@ -1270,12 +1270,14 @@ This will generate a manifest.json file in your root output directory with a map
 
 ```json
 {
-  "mods/alpha.js": "mods/alpha.1234567890.js",
-  "mods/omega.js": "mods/omega.0987654321.js"
+  "app.css": "app.dd10111c682dda9b2122.css",
+  "app.js": "app.5cf01b703f4bb1a0edb1.js",
+  "manifest.js": "manifest.06e885c1ecc6ad181507.js",
+  "vendor.js": "vendor.c2c583ea6f7638ddd2d8.js"
 }
 ```
 
-Then if you are using php or ruby, you can extra value from the file using php or ruby and place it in js script.
+Then if you are using php or ruby, you can extra value from the file using php or ruby and place it in js script. Remmber you have to load mainifest.js first, then vendor.js then your app.js
 
 ```javascript
 // webpack.config.js
