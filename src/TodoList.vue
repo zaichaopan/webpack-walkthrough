@@ -15,7 +15,9 @@ export default {
       tasks: [
         { name: "Go to grocery", completed: true },
         { name: "Go to school", completed: false },
-        { name: "Go to landuary", completed: false }
+        { name: "Go to landuary", completed: false },
+        { name: "Go to Meetting", completed: false },
+        { name: "Go to Party", completed: false }
       ]
     };
   }

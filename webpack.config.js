@@ -1,12 +1,28 @@
 var path = require('path');
+var CommonsChunkPlugin = require("webpack/lib/optimize/CommonsChunkPlugin");
+const CleanWebpackPlugin = require('clean-webpack-plugin');
+var ManifestPlugin = require('webpack-manifest-plugin');
+
+let pathsToClean = ['dist']
+
+// the clean options to use
+let cleanOptions = {
+    root: __dirname,
+    verbose: true,
+    dry: false
+}
+var VENDOR_LIBS  =['vue'];
+
+
 
 module.exports = {
     entry: {
-        app: './index'
+        app: './index',
+        vendor: VENDOR_LIBS
     },
     output: {
         path: path.resolve(__dirname, 'dist'),
-        filename: '[name].js'
+        filename: '[name].[chunkhash].js'
     },
 
     resolve: {
@@ -31,5 +47,12 @@ module.exports = {
                 }
             }
         ]
-    }
+    },
+    plugins: [
+        new CommonsChunkPlugin({
+            names: ['vendor', 'manifest']
+        }),
+        new CleanWebpackPlugin(pathsToClean, cleanOptions),
+        new ManifestPlugin()
+    ]
 }
