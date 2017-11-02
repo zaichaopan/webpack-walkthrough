@@ -3,6 +3,7 @@ var ExtractTextPlugin = require("extract-text-webpack-plugin");
 var CommonsChunkPlugin = require("webpack/lib/optimize/CommonsChunkPlugin");
 var CleanWebpackPlugin = require('clean-webpack-plugin');
 var ManifestPlugin = require('webpack-manifest-plugin');
+var UglifyJSPlugin = require('uglifyjs-webpack-plugin')
 var pathsToClean = ['dist']
 let cleanOptions = {
     root: __dirname,
@@ -10,6 +11,8 @@ let cleanOptions = {
     dry: false
 }
 var VENDOR_LIBS = ['vue'];
+
+var inProduction = (process.env.NODE_ENV === 'production');
 
 module.exports = {
     entry: {
@@ -62,4 +65,10 @@ module.exports = {
         new CleanWebpackPlugin(pathsToClean, cleanOptions),
         new ManifestPlugin()
     ]
+};
+
+if (inProduction) {
+    module.exports.plugins.push(
+        new UglifyJSPlugin()
+    )
 }

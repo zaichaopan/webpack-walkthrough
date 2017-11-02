@@ -1029,11 +1029,17 @@ Then you will see the file loader took the image to dist folder and give it a md
 
 To minifiy our code, we need to use webpack.optimize.UglifyJsPlugin
 
+install
+
+```shell
+npm install --save-dev uglifyjs-webpack-plugin
+```
+
 ```javascript
 // webpack.config.js
 
 plugins: [
-    new webpack.optimize.UglifyJsPlugin()
+     new UglifyJSPlugin()
 ]
 ```
 
@@ -1049,7 +1055,7 @@ But now the issuse is in the development, we don't want to minify. So we need to
 
  if (process.env.NODE_ENV === 'production') {
      module.exports.plugins.push(
-         new webpack.optimize.UglifyJsPlugin()
+        new UglifyJSPlugin()
      )
  }
 ```
@@ -1207,6 +1213,8 @@ var webpackConfig = {
 
 module.exports webpackConfig;
 ```
+
+[Back To Top](#webpack)
 
 ### Vendor code spliting
 
