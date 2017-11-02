@@ -1,19 +1,14 @@
 var path = require('path');
 var CommonsChunkPlugin = require("webpack/lib/optimize/CommonsChunkPlugin");
-const CleanWebpackPlugin = require('clean-webpack-plugin');
+var CleanWebpackPlugin = require('clean-webpack-plugin');
 var ManifestPlugin = require('webpack-manifest-plugin');
-
-let pathsToClean = ['dist']
-
-// the clean options to use
+var pathsToClean = ['dist']
 let cleanOptions = {
     root: __dirname,
     verbose: true,
     dry: false
 }
 var VENDOR_LIBS  =['vue'];
-
-
 
 module.exports = {
     entry: {
@@ -27,7 +22,7 @@ module.exports = {
 
     resolve: {
         alias: {
-            'vue$': 'vue/dist/vue.esm.js' // 'vue/dist/vue.common.js' for webpack 1
+            'vue$': 'vue/dist/vue.esm.js'
         }
     },
 

@@ -1126,6 +1126,8 @@ module.exports = {
 
 ## Code Split and caching
 
+### caching
+
 ```javascript
 // webpack.config.js
 module.exports = {
@@ -1140,7 +1142,7 @@ module.exports = {
 }
 ```
 
-If you put hash in the output file name, webpack will generate an unique hash for us. You will get a file main.has_id.js. The purpose of this is we can cach in our server.
+If you put hash in the output file name, webpack will generate an unique hash for us. You will get a file main.hash_id.js. The purpose of this is we can cach in our server.
 
 For multiple entries
 
@@ -1154,7 +1156,7 @@ module.exports = {
 }
 ```
 
-It will create two files in the dist folder, they have the same hash id. If we change code in main.js and build again. Both of them will use a new same hash id again. But we don't want that, because we jQuery didn't change. So we need to create a hash id for each one of them
+It will create two files in the dist folder, they have the same hash id. If we change code in main.js and build again. Both of them will use a new same hash id again. But we don't want that, because we jQuery didn't change. So we need to create a hash id for each one of them. In order to do that, we should use __chunkhash__.
 
 ```javascript
 // webpack.config.js
@@ -1170,7 +1172,9 @@ module.exports = {
 }
 ```
 
-Now each of them has a different hash. But we find that each tiem it creates a new main file with different hash. We need to clear the old one. We can use **clean-webpack-plugin**
+### clean-webpack-plugin
+
+Now each of them has a different hash. But we find that after change, each build creates a new main file with different hash. We need to clear the old one. We can use **clean-webpack-plugin**
 
 ```shell
 npm i clean-webpack-plugin --save-dev
@@ -1178,25 +1182,16 @@ npm i clean-webpack-plugin --save-dev
 
 ```javascript
 // webapck.config.js
-const CleanWebpackPlugin = require('clean-webpack-plugin'); //installed via npm
-
-const path = require('path');
-
-// the path(s) that should be cleaned
-let pathsToClean = [
-  'dist'
-]
-
-// the clean options to use
-let cleanOptions = {
+var CleanWebpackPlugin = require('clean-webpack-plugin');
+var path = require('path');
+var pathsToClean = ['dist'];
+var cleanOptions = {
   root:    __dirname,
   verbose:  true,
   dry:      false
-}
+};
 
-
-// sample WebPack config
-const webpackConfig = {
+var webpackConfig = {
   entry: {
       //...
   },
@@ -1209,6 +1204,8 @@ const webpackConfig = {
   plugins: [
     new CleanWebpackPlugin(pathsToClean, cleanOptions)
   ]
+
+module.exports webpackConfig;
 ```
 
 ### Vendor code spliting
@@ -1217,9 +1214,7 @@ We change our js code frequently. But we update our vendor (react/vue/angular) i
 
 ```javascript
 // webpack.config.js
-const VENDOR_LIBS = [
-    'react', 'loadsh', 'redux', 'react-dux' , ...
-];
+var VENDOR_LIBS = ['vue', 'loadsh', 'vuex'];
 
 module.exports = {
     entry: {
@@ -1228,7 +1223,7 @@ module.exports = {
     },
     output: {
         path: path.joins(__dirname, 'dist'),
-        filename: '[name].js'
+        filename: '[name][chunkhash].js'
     },
     module: {
         //...
@@ -1236,17 +1231,14 @@ module.exports = {
 }
 ```
 
-We are using an object or our entry instead of a string. In this way, we can have multiple entires. Like the first entry, we want to use .src/index.js, the output will be called bundle.  The second one we want to call it vendor.js. We can go to our dependencies and put them in the vendor file. We cannot hard code the name. Otherwise they will have the same name.
-
-After running, we find that we get a vendor.js file, but our bundle.js size didn't reduce. This is because in your own js file, you depend on library like react, redux. You import them to your own js files. By default, when webpack see your file import these library, so it will grap them and put them inside the one big bundle file.
+After running, we find that we get a vendor.js file, but our bundle.js size didn't reduce. This is because in your own js file, you depend on library like vue, vuex. You import them to your own js files. By default, when webpack see your file import these library, so it will grap them and put them inside the one big bundle file.
 
 In order to not double including the libs, we need to use a plugin called CommonsChunkPlugin
 
 ```javascript
 // webpack.config.js
-const VENDOR_LIBS = [
-    'react', 'loadsh', 'redux', 'react-dux' , ...
-];
+var CommonsChunkPlugin = require("webpack/lib/optimize/CommonsChunkPlugin");
+var VENDOR_LIBS = ['vue', 'loadsh', 'vuex'];
 
 module.exports = {
     entry: {
@@ -1255,35 +1247,48 @@ module.exports = {
     },
     output: {
         path: path.joins(__dirname, 'dist'),
-        filename: '[name].js'
+        filename: '[name].[chunkhash].js'
     },
     module: {
         //...
     },
     plugins: [
-        new webpack.optimize.CommonsChunkPlugin({
-            name: 'vendor'
+         new CommonsChunkPlugin({
+            names: ['vendor', 'manifest']
         })
     ]
 }
 ```
 
-## How to reference vendor.js in index.html
+### How to reference vendor.js in index.html
 
-We can add the vendor.js to index.html. But if we split the code into different files. Each time we add or remove one, we have to change index.html. So we need to find a way to automatically do this for us. We need to use a plugin - html-webpack-plugin.
+We can add the vendor.js to index.html. But if we split the code into different files, each time we add or remove one, we have to change index.html. So we need to find a way to automatically do this for us. There are two plugins that we can use. There are two ways to do this.
 
-```terminal
-npm install html-webpack-plugin --save-dev
+#### webpack-manifest-plugin
+
+This will generate a manifest.json file in your root output directory with a mapping of all source file names to their corresponding output file, for example:
+
+```json
+{
+  "mods/alpha.js": "mods/alpha.1234567890.js",
+  "mods/omega.js": "mods/omega.0987654321.js"
+}
 ```
+
+Then if you are using php or ruby, you can extra value from the file using php or ruby and place it in js script.
 
 ```javascript
 // webpack.config.js
-
-var HtmlWebpackPlugin = require('html-webpack-plugin');
-
-const VENDOR_LIBS = [
-    'react', 'loadsh', 'redux', 'react-dux' , ...
-];
+var CommonsChunkPlugin = require("webpack/lib/optimize/CommonsChunkPlugin");
+var ManifestPlugin = require('webpack-manifest-plugin');
+var CleanWebpackPlugin = require('clean-webpack-plugin');
+var VENDOR_LIBS = ['react', 'loadsh', 'redux', 'react-dux'];
+var pathsToClean = ['dist']
+var cleanOptions = {
+    root: __dirname,
+    verbose: true,
+    dry: false
+}
 
 module.exports = {
     entry: {
@@ -1292,18 +1297,62 @@ module.exports = {
     },
     output: {
         path: path.joins(__dirname, 'dist'),
-        filename: '[name].js'
+        filename: '[name].[chunkhash].js'
     },
     module: {
         //...
     },
     plugins: [
-        new webpack.optimize.CommonsChunkPlugin({
-            name: 'vendor'
+        new CommonsChunkPlugin({
+            names: ['vendor', 'manifest']
+        }),
+        new CleanWebpackPlugin(pathsToClean, cleanOptions),
+        new ManifestPlugin()
+    ]
+}
+```
+
+#### html-webpack-plugin
+
+This plugin will automatically generate html using the html template provided by you with new js scripts
+
+```shell
+npm install html-webpack-plugin --save-dev
+```
+
+```javascript
+// webpack.config.js
+var CommonsChunkPlugin = require("webpack/lib/optimize/CommonsChunkPlugin");
+var HtmlWebpackPlugin = require('html-webpack-plugin');
+var CleanWebpackPlugin = require('clean-webpack-plugin');
+var VENDOR_LIBS = ['react', 'loadsh', 'redux', 'react-dux'];
+var pathsToClean = ['dist']
+var cleanOptions = {
+    root: __dirname,
+    verbose: true,
+    dry: false
+}
+
+module.exports = {
+    entry: {
+        bundle: './src/index.js',
+        vendor: VENDOR_LIBS
+    },
+    output: {
+        path: path.joins(__dirname, 'dist'),
+        filename: '[name].[chunkhash].js'
+    },
+    module: {
+        //...
+    },
+    plugins: [
+        new CommonsChunkPlugin({
+            names: ['vendor']
         }),
         new HtmlWebpackPlugin({
             template: 'src/index.html',
-        })
+        }),
+        new CleanWebpackPlugin(pathsToClean, cleanOptions),
     ]
 }
 ```
@@ -1324,46 +1373,6 @@ We can move our index.html to src from root (because now it becomes a part of sr
 </body>
 </html>
 ```
-
-### caching
-
-How browser knows if it has downloaded a file before? By default, the browser will look for the exact file name of the file like bundle.js. If the name has not change, the browser will use the cached version. So we need a file to tell browser when a js file has changed. We need to use chunkhash
-
-```javascript
-// webpack.config.js
-
-var HtmlWebpackPlugin = require('html-webpack-plugin');
-
-const VENDOR_LIBS = [
-    'react', 'loadsh', 'redux', 'react-dux' , ...
-];
-
-module.exports = {
-    entry: {
-        bundle: './src/index.js',
-        vendor: VENDOR_LIBS
-    },
-    output: {
-        path: path.joins(__dirname, 'dist'),
-        filename: '[name].[chunkhash].js'
-    },
-    module: {
-        //...
-    },
-    plugins: [
-        new webpack.optimize.CommonsChunkPlugin({
-            names: ['vendor', 'manifest']
-        }),
-        new HtmlWebpackPlugin({
-            template: 'src/index.html',
-        })
-    ]
-}
-```
-
-We need to generate a manifest to better tell browser on whether or not the vendor file has been changed.
-
-We need to use old js file after each build
 
 [Back-to-top](#webpack)
 

@@ -1,5 +1,5 @@
 import Vue from 'vue';
-import TodoList from './src/TodoList.vue';
+import TodoList from './src/components/TodoList.vue';
 
 Vue.component('todo-list', TodoList);
 
